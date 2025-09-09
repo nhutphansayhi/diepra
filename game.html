@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Arial&display=swap" rel="stylesheet">
+  <style>
+  html { scroll-behavior: smooth; }
+    body { 
+      font-family: 'Arial', sans-serif; 
+      max-width: 800px; 
+      margin: 0 auto; 
+      padding: 20px; 
+      background-color: #f8f8f8; 
+      color: #000; 
+    }
+  h1 { 
+      font-family: 'Playfair Display', serif; 
+      text-align: center; 
+      font-size: 28px; 
+      margin-bottom: 10px; 
+    }
+  h2 { text-align: center; margin: 0 0 10px; }
+    p.intro { text-align: center; font-size: 16px; margin-bottom: 20px; }
+    a#start-over, a#select-now { 
+      display: block; 
+      text-align: center; 
+      margin: 10px 0; 
+      color: #000; 
+      text-decoration: underline; 
+      cursor: pointer; 
+    }
+    #step-indicator { 
+      text-align: center; 
+      font-size: 14px; 
+      color: #555; 
+      margin-bottom: 10px; 
+    }
+    #quiz-container { max-width: 100%; }
+  .question-section { display: none; margin-bottom: 30px; }
+  .question-section.active { display: block; animation: fadeIn 240ms ease; }
+  .question-section.completed { display: block; }
+    .intensity-wrapper { text-align: center; }
+    .faces { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 12px; margin-bottom: 10px; }
+  .face { position: relative; text-align: center; opacity: 0.6; transition: opacity 0.3s, transform 0.2s; outline: none; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; }
+  .face.selected { opacity: 1; transform: scale(1.035); }
+    .face img { width: 100%; height: 100%; object-fit: cover; }
+    .face-label { font-size: 12px; margin-top: 5px; }
+    input[type="range"] { 
+      width: 100%; 
+      -webkit-appearance: none; 
+      appearance: none; 
+      height: 8px; 
+      /* Two-layer background: progress overlay + base gradient */
+      background: 
+        linear-gradient(#4d2a12, #4d2a12) no-repeat, 
+        linear-gradient(to right, #f0d9c7, #d2a679, #a56d3e, #7a4420, #4d2a12); 
+      background-size: var(--progress, 0%) 100%, 100% 100%;
+      background-position: left center, left center; 
+      border-radius: 5px; 
+      outline: none; 
+      transition: background-size 0.2s ease; 
+    }
+    input[type="range"]::-webkit-slider-thumb { 
+      -webkit-appearance: none; 
+      appearance: none; 
+      width: 20px; 
+      height: 20px; 
+      background: #fff; 
+      border: 2px solid #000; 
+      border-radius: 50%; 
+      cursor: pointer; 
+      transition: transform 0.12s ease, box-shadow 0.12s ease; 
+    }
+    input[type="range"].dragging::-webkit-slider-thumb { transform: scale(1.08); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    /* Firefox */
+    input[type="range"]::-moz-range-thumb { 
+      width: 20px; height: 20px; background: #fff; border: 2px solid #000; border-radius: 50%; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; 
+    }
+    input[type="range"].dragging::-moz-range-thumb { transform: scale(1.08); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    input[type="range"]::-moz-range-track { height: 8px; background: transparent; }
+    .undertone-options, .options { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px; 
+      margin: 20px 0; 
+    }
+    /* Tile grid for visual options */
+    .tile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 20px 0; }
+    .tile-option { 
+      position: relative; 
+      aspect-ratio: 1 / 1; 
+      background-size: cover; 
+      background-position: center; 
+      border-radius: 10px; 
+      border: 4px solid transparent; 
+      overflow: hidden; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      color: #0a1535; 
+      letter-spacing: 0.06em; 
+      font-weight: 800; 
+      text-transform: uppercase; 
+      cursor: pointer; 
+    }
+    .tile-option::after { 
+      content: ""; 
+      position: absolute; inset: 0; 
+      background: linear-gradient(to bottom, rgba(255,255,255,0.55), rgba(255,255,255,0.15));
+      pointer-events: none; 
+    }
+    .tile-option .tile-label { position: relative; z-index: 1; font-size: 18px; text-align: center; padding: 0 8px; }
+    .tile-option.selected { border-color: #0a1535; box-shadow: 0 0 0 2px #0a1535 inset; }
+    .option-box { 
+      position: relative;
+      aspect-ratio: 1 / 1; 
+      background: #f5f0e6; 
+      border-radius: 10px; 
+      text-align: center; 
+      cursor: pointer; 
+      transition: background 0.2s, transform 0.1s, border-color 0.2s; 
+      outline: none; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      border: 4px solid transparent;
+      overflow: hidden;
+    }
+    .option-box.selected { background: #e0d8cc; border-color: #0a1535; box-shadow: 0 0 0 2px #0a1535 inset; }
+    .option-box h3 { margin-bottom: 10px; }
+    .option-box .thumb { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.9; }
+    .option-box .label { position: relative; z-index: 1; font-weight: 800; letter-spacing: 0.06em; color: #0a1535; text-transform: uppercase; padding: 0 8px; }
+    button.next { 
+      display: block; 
+      margin: 20px auto; 
+      padding: 12px 24px; 
+      background: #000; 
+      color: #fff; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-weight: bold; 
+      transition: background 0.3s ease; 
+    }
+    button.next:hover { background: #333; }
+    button.next[disabled] { background: #888; cursor: not-allowed; opacity: 0.7; }
+    #progress-bar { 
+      height: 4px; 
+      background: #ddd; 
+      margin-bottom: 20px; 
+      position: relative; 
+    }
+    #progress { 
+      height: 100%; 
+      background: linear-gradient(to right, #f0d9c7, #4d2a12); 
+      width: 0%; 
+      transition: width 0.5s ease; 
+    }
+    /* Summary bar */
+    #answers-summary { 
+      display: none; 
+      grid-template-columns: repeat(5, 1fr); 
+      gap: 16px; 
+      align-items: stretch; 
+      margin: 8px 0 16px; 
+      padding: 10px 0; 
+      border-top: 1px solid #ddd; 
+      border-bottom: 1px solid #ddd; 
+    }
+    #answers-summary.visible { display: grid; }
+    .summary-item { text-align: center; padding: 6px 8px; }
+    .summary-item .label { font-size: 11px; letter-spacing: 0.12em; color: #666; font-weight: 800; }
+    .summary-item .value { margin-top: 4px; font-size: 16px; text-decoration: underline; }
+
+    /* Collapse/slide up animation for completed questions */
+    .question-section.collapsing { 
+      overflow: clip; 
+      transition: height 260ms ease, opacity 220ms ease, margin 220ms ease; 
+    }
+    .question-section.collapsed { 
+      height: 0 !important; 
+      margin: 0 !important; 
+      opacity: 0; 
+      pointer-events: none; 
+    }
+    #results { 
+      display: none; 
+      margin-top: 30px; 
+    }
+    #results section { 
+      margin-bottom: 30px; 
+      padding: 20px; 
+      background: #f5f5f5; 
+      border-radius: 4px; 
+    }
+    .no-results { 
+      color: #d32f2f; 
+      text-align: center; 
+      padding: 15px; 
+      background: #ffebee; 
+      border-radius: 4px; 
+    }
+    .product-img { 
+      max-width: 100%; 
+      height: auto; 
+      margin: 10px 0; 
+    }
+    .results-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .btn-secondary { 
+      background: #fff; 
+      color: #000; 
+      border: 1px solid #000; 
+      border-radius: 4px; 
+      padding: 10px 16px; 
+      cursor: pointer; 
+      font-weight: 600; 
+    }
+    .btn-secondary:hover { background: #f0f0f0; }
+
+    /* Modal */
+    .modal-backdrop { 
+      display: none; 
+      position: fixed; 
+      inset: 0; 
+      background: rgba(0,0,0,0.4); 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 1000; 
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal { 
+      background: #fff; 
+      padding: 20px; 
+      border-radius: 8px; 
+      max-width: 640px; 
+      width: 92%; 
+      max-height: 86vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+    }
+  .modal header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; position: sticky; top: 0; background: #fff; z-index: 1; }
+    .modal h3 { margin: 0; }
+    .close-modal { background: transparent; border: none; font-size: 20px; cursor: pointer; }
+  .modal .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 12px; }
+  .modal .row .option-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; }
+  .modal footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; position: sticky; bottom: 0; background: #fff; padding-top: 10px; }
+
+    /* Accessibility focus */
+    .option-box:focus, .face:focus { outline: 3px solid #000; outline-offset: 2px; }
+
+    /* Micro animations */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: translateY(0);} }
+
+    @media (max-width: 600px) { 
+      body { padding: 10px; } 
+      h1 { font-size: 24px; } 
+  .tile-grid { grid-template-columns: 1fr; gap: 12px; }
+  #answers-summary { grid-template-columns: 1fr 1fr; }
+      .modal .row .option-box { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="quiz-container">
+    <h1>Find Your Skincare + Serum and Lipstick Matches</h1>
+    <p class="intro">Answer a few quick questions to find the right skincare for you. Then, see your perfect partner serum and lipstick.</p>
+    
+    <a href="#" id="start-over">Start Over</a>
+    <p>Already know your shade & formula? Select them now & find your serum & lip matches.</p>
+    <a href="#" id="select-now">SELECT NOW</a>
+
+  <div id="progress-bar"><div id="progress"></div></div>
+    <div id="step-indicator" aria-live="polite">Step 1 of 5</div>
+
+    <!-- Answers Summary (fills as you answer; stays compact) -->
+    <div id="answers-summary" aria-live="polite"></div>
+
+    <!-- Quick Select Modal -->
+    <div id="quick-select" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="quick-select-title">
+      <div class="modal">
+        <header>
+          <h3 id="quick-select-title">Quick Select</h3>
+          <button class="close-modal" aria-label="Close" id="quick-close">×</button>
+        </header>
+        <p>Pick your choices instantly. We'll show results right away.</p>
+        <div class="row" id="qs-intensity" aria-label="Intensity" role="radiogroup">
+          <div class="option-box" data-key="intensity" data-value="light-medium" tabindex="0">Light-Medium</div>
+          <div class="option-box" data-key="intensity" data-value="medium" tabindex="0">Medium</div>
+          <div class="option-box" data-key="intensity" data-value="medium-deep" tabindex="0">Medium-Deep</div>
+          <div class="option-box" data-key="intensity" data-value="deep" tabindex="0">Deep</div>
+          <div class="option-box" data-key="intensity" data-value="extra-deep" tabindex="0">Extra-Deep</div>
+        </div>
+        <div class="row" id="qs-undertone" aria-label="Undertone" role="radiogroup">
+          <div class="option-box" data-key="undertone" data-value="cool" tabindex="0">Cool</div>
+          <div class="option-box" data-key="undertone" data-value="neutral" tabindex="0">Neutral</div>
+          <div class="option-box" data-key="undertone" data-value="warm" tabindex="0">Warm</div>
+        </div>
+        <div class="row" id="qs-coverage" aria-label="Coverage" role="radiogroup">
+          <div class="option-box" data-key="coverage" data-value="sheer" tabindex="0">Sheer</div>
+          <div class="option-box" data-key="coverage" data-value="medium" tabindex="0">Medium</div>
+          <div class="option-box" data-key="coverage" data-value="full" tabindex="0">Full</div>
+        </div>
+        <div class="row" id="qs-finish" aria-label="Finish" role="radiogroup">
+          <div class="option-box" data-key="finish" data-value="matte" tabindex="0">Matte</div>
+          <div class="option-box" data-key="finish" data-value="dewy" tabindex="0">Dewy</div>
+          <div class="option-box" data-key="finish" data-value="natural" tabindex="0">Natural</div>
+        </div>
+        <div class="row" id="qs-skin" aria-label="Skin Type" role="radiogroup">
+          <div class="option-box" data-key="skin_type" data-value="dry" tabindex="0">Dry</div>
+          <div class="option-box" data-key="skin_type" data-value="oily" tabindex="0">Oily</div>
+          <div class="option-box" data-key="skin_type" data-value="combination" tabindex="0">Combination</div>
+          <div class="option-box" data-key="skin_type" data-value="normal" tabindex="0">Normal</div>
+        </div>
+        <footer>
+          <button class="btn-secondary" id="quick-cancel">Cancel</button>
+          <button class="next" id="quick-apply" disabled>Show Results</button>
+        </footer>
+      </div>
+    </div>
+
+    <div id="q1" class="question-section active">
+      <h2>Choose your skin intensity.</h2>
+      <div class="intensity-wrapper">
+        <div class="faces">
+          <div class="face" data-value="1" data-label="LIGHT-MEDIUM" tabindex="0"><img src="light.png" alt="Light-Medium"><div class="face-label">LIGHT-MEDIUM</div></div>
+          <div class="face" data-value="2" data-label="MEDIUM" tabindex="0"><img src="light-medium.png" alt="Medium"><div class="face-label">MEDIUM</div></div>
+          <div class="face" data-value="3" data-label="MEDIUM-DEEP" tabindex="0"><img src="medium.png" alt="Medium-Deep"><div class="face-label">MEDIUM-DEEP</div></div>
+          <div class="face" data-value="4" data-label="DEEP" tabindex="0"><img src="medium-deep.png" alt="Deep"><div class="face-label">DEEP</div></div>
+          <div class="face" data-value="5" data-label="EXTRA-DEEP" tabindex="0"><img src="deep.png" alt="Extra-Deep"><div class="face-label">EXTRA-DEEP</div></div>
+          <div class="face" data-value="6" data-label="ULTRA-DEEP" tabindex="0"><img src="extra-deep.png" alt="Ultra-Deep"><div class="face-label">ULTRA-DEEP</div></div>
+          <div class="face" data-value="7" data-label="DEEPEST" tabindex="0"><img src="deepest.png" alt="Deepest"><div class="face-label">DEEPEST</div></div>
+        </div>
+        <input type="range" id="intensity-slider" min="1" max="7" step="1" value="1">
+      </div>
+      <button class="next" data-next="q2">NEXT</button>
+    </div>
+
+    <div id="q2" class="question-section">
+      <h2>Select your undertone.</h2>
+      <div class="tile-grid" id="undertone-tiles">
+        <!-- Insert image by setting style background-image:url('path') or data-img attribute -->
+        <div class="tile-option" data-value="cool" data-img="" style="background-image: url('');"><div class="tile-label">COOL</div></div>
+        <div class="tile-option" data-value="neutral" data-img="" style="background-image: url('');"><div class="tile-label">NEUTRAL</div></div>
+        <div class="tile-option" data-value="warm" data-img="" style="background-image: url('');"><div class="tile-label">WARM</div></div>
+      </div>
+      <button class="next" data-next="q3">NEXT</button>
+    </div>
+
+    <div id="q3" class="question-section">
+      <h2>Select your coverage.</h2>
+      <div class="tile-grid" id="coverage-tiles">
+        <!-- Insert image by setting background-image or data-img -->
+        <div class="tile-option" data-value="sheer" data-img="" style="background-image:url('');"><div class="tile-label">SHEER</div></div>
+        <div class="tile-option" data-value="medium" data-img="" style="background-image:url('');"><div class="tile-label">MEDIUM</div></div>
+        <div class="tile-option" data-value="full" data-img="" style="background-image:url('');"><div class="tile-label">FULL</div></div>
+      </div>
+      <button class="next" data-next="q4">NEXT</button>
+    </div>
+
+    <div id="q4" class="question-section">
+      <h2>Select your finish.</h2>
+      <div class="tile-grid" id="finish-tiles">
+        <!-- Insert image by setting background-image or data-img -->
+        <div class="tile-option" data-value="dewy" data-img="" style="background-image:url('');"><div class="tile-label">RADIANT GLOW</div></div>
+        <div class="tile-option" data-value="natural" data-img="" style="background-image:url('');"><div class="tile-label">SEMI-MATTE, SATIN</div></div>
+        <div class="tile-option" data-value="matte" data-img="" style="background-image:url('');"><div class="tile-label">MATTE</div></div>
+      </div>
+      <button class="next" data-next="q5">NEXT</button>
+    </div>
+
+    <div id="q5" class="question-section">
+      <h2>Select your skin type.</h2>
+      <div class="options">
+        <!-- Insert image by setting the .thumb background-image url('path') or data-img on container -->
+        <div class="option-box" data-value="dry" data-img=""><div class="thumb" style="background-image: url('');"></div><span class="label">DRY</span></div>
+        <div class="option-box" data-value="oily" data-img=""><div class="thumb" style="background-image: url('');"></div><span class="label">OILY</span></div>
+        <div class="option-box" data-value="combination" data-img=""><div class="thumb" style="background-image: url('');"></div><span class="label">COMBINATION</span></div>
+        <div class="option-box" data-value="normal" data-img=""><div class="thumb" style="background-image: url('');"></div><span class="label">NORMAL</span></div>
+      </div>
+      <button class="next" data-next="results">SUBMIT</button>
+    </div>
+
+    <div id="results">
+      <h2>Your Results</h2>
+      <p>Skincare, serum & lipstick recommendations just for you.</p>
+      
+      <section id="skincare-rec">
+        <h3>Skincare</h3>
+        <p>Stock up on your favorite, then scroll down for some serum & lipstick recommendations just for you.</p>
+        <img class="product-img" src="product/pro1.png" alt="Skincare">
+        <p id="skincare-text"></p>
+      </section>
+      
+      <section id="serum-rec">
+        <h3>Serum</h3>
+        <p>Try these shade(s) & formula(s). Keep scrolling for your lipstick matches.</p>
+        <img class="product-img" src="product/pro2.png" alt="Serum">
+        <p id="serum-text"></p>
+      </section>
+      
+      <section id="lipstick-rec">
+        <h3>Lipstick</h3>
+        <p>Finish your look with lipstick in one of these recommended shades from every shade family.</p>
+        <img class="product-img" src="product/pro3.png" alt="Lipstick">
+        <p id="lipstick-text"></p>
+      </section>
+      
+      <section id="primer-rec">
+        <h3>Primer</h3>
+        <p>Choose a high-performance primer.</p>
+        <img class="product-img" src="product/pro4.png" alt="Primer">
+      </section>
+      
+      <section>
+        <h3>Get The Look</h3>
+        <p>Step 1: Prep skin with your favorite primer.<br>Step 2: Follow with skincare.<br>Step 3: Apply serum where needed.<br>Step 4: Finish with lipstick for a pop of color.</p>
+        <div class="results-actions">
+          <button class="btn-secondary" id="edit-answers">Edit Answers</button>
+          <button class="btn-secondary" id="share-results">Share Results</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // State
+    const questions = ['q1', 'q2', 'q3', 'q4', 'q5'];
+    const totalSteps = questions.length;
+    const answers = {};
+    const progress = document.getElementById('progress');
+    const stepIndicator = document.getElementById('step-indicator');
+    const startOver = document.getElementById('start-over');
+    const selectNow = document.getElementById('select-now');
+  const resultsDiv = document.getElementById('results');
+  const summary = document.getElementById('answers-summary');
+
+    // Intensity slider
+    const slider = document.getElementById('intensity-slider');
+    const faces = document.querySelectorAll('.face');
+    function updateSliderVisual(value) {
+      const min = Number(slider.min) || 1;
+      const max = Number(slider.max) || 5;
+      const pct = ((value - min) / (max - min)) * 100;
+      slider.style.setProperty('--progress', pct + '%');
+    }
+
+    slider.addEventListener('input', (e) => {
+      const value = e.target.value;
+      faces.forEach(face => {
+        face.classList.toggle('selected', face.dataset.value === value);
+      });
+      const selectedFace = Array.from(faces).find(f => f.dataset.value === String(value));
+      const label = selectedFace ? (selectedFace.dataset.label || selectedFace.querySelector('.face-label')?.textContent || '') : '';
+      const mapValues = ['light-medium','medium','medium-deep','deep','extra-deep','ultra-deep','deepest'];
+      answers.intensity = mapValues[(Number(value)-1)];
+      answers.intensity_label = label;
+      persistState();
+      updateNextButtonState(document.getElementById('q1'));
+      updateSliderVisual(Number(value));
+      renderSummary();
+    });
+    slider.addEventListener('pointerdown', () => slider.classList.add('dragging'));
+    slider.addEventListener('pointerup', () => slider.classList.remove('dragging'));
+    // Initial select
+  faces[0].classList.add('selected');
+  answers.intensity = 'light-medium';
+  answers.intensity_label = faces[0].dataset?.label || 'LIGHT-MEDIUM';
+    updateSliderVisual(1);
+
+    // Faces: click or keyboard to pick value
+    faces.forEach(face => {
+      face.addEventListener('click', () => {
+        slider.value = face.dataset.value;
+        slider.dispatchEvent(new Event('input'));
+        face.classList.add('selected');
+      });
+      face.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          slider.value = face.dataset.value;
+          slider.dispatchEvent(new Event('input'));
+        }
+      });
+    });
+
+  // Option boxes (per-question)
+    document.querySelectorAll('#q2 .option-box, #q3 .option-box, #q4 .option-box, #q5 .option-box').forEach(box => {
+      box.addEventListener('click', (e) => {
+        const targetBox = e.currentTarget;
+        const group = targetBox.closest('.options, .undertone-options, .tile-grid');
+        const siblings = group.querySelectorAll('.option-box');
+        siblings.forEach(s => s.classList.remove('selected'));
+        targetBox.classList.add('selected');
+        const qId = targetBox.closest('.question-section').id;
+        const key = qId === 'q2' ? 'undertone' : qId === 'q3' ? 'coverage' : qId === 'q4' ? 'finish' : 'skin_type';
+        answers[key] = targetBox.dataset.value;
+        answers[key + '_label'] = (targetBox.querySelector('.label')?.textContent || targetBox.textContent || '').trim();
+        persistState();
+        updateNextButtonState(targetBox.closest('.question-section'));
+        renderSummary();
+        // Collapse with animation then go next
+        collapseThenNext(qId);
+      });
+      box.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); box.click(); }
+      });
+    });
+
+  // Tile options for undertone, coverage and finish (image tiles)
+  document.querySelectorAll('#undertone-tiles .tile-option, #coverage-tiles .tile-option, #finish-tiles .tile-option').forEach(tile => {
+      tile.addEventListener('click', (e) => {
+        const t = e.currentTarget;
+        const parent = t.parentElement;
+  parent.querySelectorAll('.tile-option').forEach(n => { n.classList.remove('selected'); n.setAttribute('aria-pressed', 'false'); });
+        t.classList.add('selected');
+  t.setAttribute('aria-pressed', 'true');
+        const qId = t.closest('.question-section').id;
+    const key = qId === 'q3' ? 'coverage' : (qId === 'q4' ? 'finish' : 'undertone');
+        answers[key] = t.dataset.value;
+    answers[key + '_label'] = (t.querySelector('.tile-label')?.textContent || '').trim();
+        persistState();
+        updateNextButtonState(t.closest('.question-section'));
+    renderSummary();
+    collapseThenNext(qId);
+      });
+      tile.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); tile.click(); } });
+      tile.setAttribute('tabindex', '0');
+      tile.setAttribute('role', 'button');
+      tile.setAttribute('aria-pressed', 'false');
+    });
+
+  // Next buttons
+    document.querySelectorAll('.next').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (btn.hasAttribute('disabled')) return;
+    const currentId = e.target.closest('.question-section').id;
+    goToNextSection(currentId);
+      });
+    });
+
+    function updateProgress() {
+      const currentIndex = questions.findIndex(q => document.getElementById(q).classList.contains('active'));
+      const percent = currentIndex >= 0 ? ((currentIndex + 1) / questions.length) * 100 : 100;
+      progress.style.width = `${percent}%`;
+    }
+
+    function updateStepIndicator() {
+      const currentIndex = questions.findIndex(q => document.getElementById(q).classList.contains('active'));
+      if (currentIndex >= 0) {
+        stepIndicator.textContent = `Step ${currentIndex + 1} of ${totalSteps}`;
+      } else {
+        stepIndicator.textContent = `Completed`;
+      }
+    }
+
+    function updateNextButtonState(sectionEl) {
+      if (!sectionEl) return;
+      const btn = sectionEl.querySelector('.next');
+      if (!btn) return;
+      let enabled = true;
+      if (sectionEl.id === 'q2') enabled = !!answers.undertone;
+      if (sectionEl.id === 'q3') enabled = !!answers.coverage;
+      if (sectionEl.id === 'q4') enabled = !!answers.finish;
+      if (sectionEl.id === 'q5') enabled = !!answers.skin_type;
+      if (enabled) btn.removeAttribute('disabled'); else btn.setAttribute('disabled', 'true');
+    }
+
+  // Summary renderer defined later
+
+    // Collapse with animation then advance
+    function collapseThenNext(currentId) {
+      const el = document.getElementById(currentId);
+      if (!el) { goToNextSection(currentId); return; }
+      const startHeight = el.offsetHeight;
+      el.style.height = startHeight + 'px';
+      el.classList.add('collapsing');
+      // reflow
+      void el.offsetHeight;
+      el.classList.add('collapsed');
+      let finished = false;
+      const done = () => {
+        if (finished) return;
+        finished = true;
+        el.classList.remove('collapsing');
+        el.classList.add('completed');
+        el.style.height = '';
+        goToNextSection(currentId);
+      };
+      const onEnd = (ev) => { if (ev.propertyName === 'height') { el.removeEventListener('transitionend', onEnd); done(); } };
+      el.addEventListener('transitionend', onEnd);
+      setTimeout(done, 380); // fallback
+    }
+
+    // Render compact answers summary bar
+    function renderSummary() {
+      const container = document.getElementById('answers-summary');
+      if (!container) return;
+      const items = [
+        { key: 'intensity', label: 'INTENSITY', value: (answers.intensity_label || answers.intensity) },
+        { key: 'undertone', label: 'UNDERTONE', value: (answers.undertone_label || answers.undertone) },
+        { key: 'coverage', label: 'COVERAGE', value: (answers.coverage_label || answers.coverage) },
+        { key: 'finish', label: 'FINISH', value: (answers.finish_label || answers.finish) },
+        { key: 'skin_type', label: 'SKIN TYPE', value: (answers.skin_type_label || answers.skin_type) },
+      ];
+      const any = items.some(i => !!i.value);
+      if (!any) { container.classList.remove('visible'); container.innerHTML = ''; return; }
+      container.classList.add('visible');
+      container.innerHTML = items.map(i => `
+        <div class="summary-item">
+          <div class="label">${i.label}</div>
+          <div class="value">${(i.value || '').toString().replace(/-/g,' ')}</div>
+        </div>
+      `).join('');
+    }
+
+    // Auto-advance helper
+    function goToNextSection(currentId) {
+      const currentIndex = questions.indexOf(currentId);
+      const nextId = currentIndex >= 0 && currentIndex < questions.length - 1 ? questions[currentIndex + 1] : 'results';
+      const currentEl = document.getElementById(currentId);
+      if (currentEl) {
+        currentEl.classList.remove('active');
+        currentEl.classList.add('completed');
+      }
+      if (nextId !== 'results') {
+        const nextEl = document.getElementById(nextId);
+        if (nextEl) {
+          nextEl.classList.add('active');
+          updateNextButtonState(nextEl);
+          updateProgress();
+          updateStepIndicator();
+          // Smooth scroll into view of next section
+          smoothScrollTo(nextEl);
+        }
+      } else {
+        showResults();
+        smoothScrollTo(resultsDiv);
+      }
+    }
+
+    function smoothScrollTo(el) {
+      if (!el) return;
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const offset = getScrollOffset();
+      const parent = getScrollParent(el) || window;
+      const rect = el.getBoundingClientRect();
+      const currentScroll = parent === window ? window.pageYOffset : parent.scrollTop;
+      const targetTop = currentScroll + rect.top - (parent === window ? offset : offsetWithin(parent)) - 6; // small visual margin
+      if (prefersReduced) {
+        if (parent === window) window.scrollTo(0, targetTop); else parent.scrollTo(0, targetTop);
+        return;
+      }
+      if (parent === window) {
+        window.scrollTo({ top: targetTop, behavior: 'smooth' });
+      } else {
+        parent.scrollTo({ top: targetTop, behavior: 'smooth' });
+      }
+    }
+
+    function getScrollOffset() {
+      const container = document.getElementById('quiz-container');
+      const attr = container ? container.getAttribute('data-scroll-offset') : null;
+      const n = Number(attr);
+      return isFinite(n) ? n : 0; // customize via data-scroll-offset="64"
+    }
+
+    function getScrollParent(node) {
+      if (!node) return window;
+      let p = node.parentElement;
+      while (p && p !== document.body) {
+        const style = getComputedStyle(p);
+        const overflowY = style.overflowY;
+        if (overflowY === 'auto' || overflowY === 'scroll') return p;
+        p = p.parentElement;
+      }
+      return window;
+    }
+
+    function offsetWithin(parent) {
+      if (!parent || parent === window) return 0;
+      const pr = parent.getBoundingClientRect();
+      return pr.top;
+    }
+
+  function showResults() {
+      // Check if all required answered
+      const required = ['intensity','undertone','coverage','finish','skin_type'];
+      if (!required.every(k => !!answers[k])) {
+        resultsDiv.innerHTML = '<p class="no-results">Unfortunately no search results were found for your entered criteria.</p>';
+        resultsDiv.style.display = 'block';
+        return;
+      }
+
+      // Simple logic (adjust as needed)
+      let score = 0;
+      if (answers.intensity === 'deep' || answers.intensity === 'extra-deep') score += 3;
+      if (answers.undertone === 'warm') score += 2;
+      if (answers.coverage === 'full' || answers.coverage === 'medium') score += 3;
+      if (answers.finish === 'matte') score += 1;
+      if (answers.skin_type === 'oily') score += 2;
+
+      const skincare = score > 8 
+        ? 'Diepra Balance+ Gel-Cream (oil-controlling, lightweight hydration)'
+        : answers.skin_type === 'dry' ? 'Diepra Hydrate+ Rich Cream (long-lasting moisture)' : 'Diepra Calm+ Daily Moisturizer (balanced hydration)';
+      const serum = (answers.coverage === 'full' || answers.coverage === 'medium' || answers.finish === 'matte')
+        ? 'Diepra Perfecting Serum+ (pore-refining, high-performance)'
+        : 'Diepra Glow Serum (brightening, natural radiance)';
+      const lipstick = (answers.undertone === 'warm')
+        ? 'Diepra Luxe Matte in Terra Rose or Amber Nude'
+        : answers.undertone === 'cool' ? 'Diepra Satin in Berry Mauve or Soft Plum' : 'Diepra Cream in Peony Pink or Tawny Beige';
+
+      const skinP = document.getElementById('skincare-text');
+      const serumP = document.getElementById('serum-text');
+      const lipP = document.getElementById('lipstick-text');
+      if (skinP) skinP.textContent = `Recommended: ${skincare}.`;
+      if (serumP) serumP.textContent = `Try: ${serum}.`;
+      if (lipP) lipP.textContent = `Finish with: ${lipstick}.`;
+
+  resultsDiv.style.display = 'block';
+  progress.style.width = '100%';
+  renderSummary();
+      updateStepIndicator();
+      persistState(true);
+    }
+
+    startOver.addEventListener('click', (e) => {
+      e.preventDefault();
+      questions.forEach(q => {
+        const el = document.getElementById(q);
+        el.classList.remove('active','completed','collapsing','collapsed');
+        el.style.height = '';
+      });
+      document.getElementById('q1').classList.add('active');
+      resultsDiv.style.display = 'none';
+      progress.style.width = '0%';
+  Object.keys(answers).forEach(key => delete answers[key]);
+      slider.value = 1;
+      faces.forEach(f => f.classList.remove('selected'));
+      faces[0].classList.add('selected');
+  answers.intensity = 'light-medium';
+  answers.intensity_label = faces[0].dataset?.label || 'LIGHT-MEDIUM';
+      document.querySelectorAll('.option-box').forEach(b => b.classList.remove('selected'));
+      updateProgress();
+      updateStepIndicator();
+      updateNextButtonState(document.getElementById('q1'));
+      localStorage.removeItem('beautyQuiz');
+      history.replaceState({}, '', location.pathname);
+  renderSummary();
+    });
+
+    selectNow.addEventListener('click', (e) => {
+      e.preventDefault();
+      openQuickSelect();
+    });
+
+    // Quick Select modal logic
+    const quickModal = document.getElementById('quick-select');
+    const quickClose = document.getElementById('quick-close');
+    const quickCancel = document.getElementById('quick-cancel');
+    const quickApply = document.getElementById('quick-apply');
+
+    function openQuickSelect() { quickModal.classList.add('active'); trapFocus(quickModal); refreshQuickSelectState(); }
+    function closeQuickSelect() { quickModal.classList.remove('active'); releaseFocusTrap(); }
+    quickClose.addEventListener('click', closeQuickSelect);
+    quickCancel.addEventListener('click', closeQuickSelect);
+    quickModal.addEventListener('click', (e) => { if (e.target === quickModal) closeQuickSelect(); });
+
+    function refreshQuickSelectState() {
+      // sync selected states from answers
+      quickModal.querySelectorAll('.option-box').forEach(b => b.classList.remove('selected'));
+      ['intensity','undertone','coverage','finish','skin_type'].forEach(k => {
+        const v = answers[k];
+        if (!v) return;
+        const el = quickModal.querySelector(`.option-box[data-key="${k}"][data-value="${v}"]`);
+        if (el) el.classList.add('selected');
+      });
+      updateQuickApplyState();
+    }
+
+    function updateQuickApplyState() {
+      const needed = ['intensity','undertone','coverage','finish','skin_type'];
+      const ok = needed.every(k => !!answers[k]);
+      quickApply.toggleAttribute('disabled', !ok);
+    }
+
+    quickModal.querySelectorAll('.option-box').forEach(b => {
+      b.addEventListener('click', (e) => {
+        const box = e.currentTarget;
+        const key = box.dataset.key;
+        const group = box.parentElement;
+        group.querySelectorAll('.option-box').forEach(s => s.classList.remove('selected'));
+        box.classList.add('selected');
+        answers[key] = box.dataset.value;
+        persistState();
+        updateQuickApplyState();
+      });
+      b.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); b.click(); } });
+    });
+
+    quickApply.addEventListener('click', () => {
+      // Sync quiz UI from answers then show results
+      applyAnswersToUI();
+      closeQuickSelect();
+      questions.forEach(q => {
+        const el = document.getElementById(q);
+        el.classList.remove('active');
+        el.classList.add('completed');
+      });
+      showResults();
+      updateProgress();
+    });
+
+    // Share and edit actions
+    document.getElementById('edit-answers').addEventListener('click', () => {
+      resultsDiv.style.display = 'none';
+      document.getElementById('q1').classList.add('active');
+      updateProgress();
+      updateStepIndicator();
+    });
+    document.getElementById('share-results').addEventListener('click', async () => {
+      const url = buildShareUrl(answers);
+      try {
+        await navigator.clipboard.writeText(url);
+        alert('A shareable link has been copied to your clipboard.');
+      } catch (_) {
+        prompt('Copy your shareable link:', url);
+      }
+    });
+
+    function buildShareUrl(a) {
+      const params = new URLSearchParams(a);
+      params.set('auto','1');
+      return `${location.origin}${location.pathname}?${params.toString()}`;
+    }
+
+    // Persist/restore
+    function persistState(includeResults = false) {
+      const data = { answers, includeResults };
+      localStorage.setItem('beautyQuiz', JSON.stringify(data));
+      const url = new URL(location.href);
+      Object.entries(answers).forEach(([k,v]) => url.searchParams.set(k, v));
+      history.replaceState({}, '', `${url.pathname}?${url.searchParams.toString()}`);
+    }
+
+    function restoreStateFromStorage() {
+      try {
+        const raw = localStorage.getItem('beautyQuiz');
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (!data || !data.answers) return false;
+        Object.assign(answers, data.answers);
+        applyAnswersToUI();
+        if (data.includeResults) { showResults(); }
+        return true;
+      } catch { return false; }
+    }
+
+    function applyAnswersToUI() {
+      // intensity
+  const map = { 'light-medium':1, 'medium':2, 'medium-deep':3, 'deep':4, 'extra-deep':5, 'ultra-deep':6, 'deepest':7 };
+      if (answers.intensity && map[answers.intensity]) {
+        slider.value = String(map[answers.intensity]);
+        slider.dispatchEvent(new Event('input'));
+      }
+      // reset selections
+      document.querySelectorAll('#q2 .option-box, #q3 .option-box, #q4 .option-box, #q5 .option-box').forEach(b => b.classList.remove('selected'));
+      // apply per question
+      if (answers.undertone) {
+        const el = document.querySelector(`#q2 .option-box[data-value="${answers.undertone}"]`); if (el) el.classList.add('selected');
+      }
+      if (answers.coverage) {
+        const el = document.querySelector(`#q3 .option-box[data-value="${answers.coverage}"]`); if (el) el.classList.add('selected');
+        const tile = document.querySelector(`#coverage-tiles .tile-option[data-value="${answers.coverage}"]`);
+        if (tile) {
+          tile.parentElement.querySelectorAll('.tile-option').forEach(n => { n.classList.remove('selected'); n.setAttribute('aria-pressed','false'); });
+          tile.classList.add('selected');
+          tile.setAttribute('aria-pressed','true');
+        }
+      }
+      if (answers.finish) {
+        const el = document.querySelector(`#q4 .option-box[data-value="${answers.finish}"]`); if (el) el.classList.add('selected');
+        const tile = document.querySelector(`#finish-tiles .tile-option[data-value="${answers.finish}"]`);
+        if (tile) {
+          tile.parentElement.querySelectorAll('.tile-option').forEach(n => { n.classList.remove('selected'); n.setAttribute('aria-pressed','false'); });
+          tile.classList.add('selected');
+          tile.setAttribute('aria-pressed','true');
+        }
+      }
+      if (answers.skin_type) {
+        const el = document.querySelector(`#q5 .option-box[data-value="${answers.skin_type}"]`); if (el) el.classList.add('selected');
+      }
+      // Reveal sections progressively so users can scroll back to edit
+      syncSectionVisibility();
+      updateNextButtonState(document.getElementById('q2'));
+      updateNextButtonState(document.getElementById('q3'));
+      updateNextButtonState(document.getElementById('q4'));
+      updateNextButtonState(document.getElementById('q5'));
+    }
+
+    function syncSectionVisibility() {
+      // Determine last answered index
+      const keys = ['intensity','undertone','coverage','finish','skin_type'];
+      let lastAnswered = -1;
+      keys.forEach((k, i) => { if (answers[k]) lastAnswered = i; });
+      questions.forEach((qid, i) => {
+        const el = document.getElementById(qid);
+        el.classList.remove('active');
+        el.classList.remove('completed');
+        if (i < lastAnswered) el.classList.add('completed');
+      });
+      if (lastAnswered >= 0 && lastAnswered < questions.length) {
+        document.getElementById(questions[lastAnswered]).classList.add('completed');
+        const nextIndex = Math.min(lastAnswered + 1, questions.length - 1);
+        document.getElementById(questions[nextIndex]).classList.add('active');
+      } else {
+        document.getElementById('q1').classList.add('active');
+      }
+      updateProgress();
+      updateStepIndicator();
+    }
+
+    function restoreStateFromUrl() {
+      const params = new URLSearchParams(location.search);
+      let changed = false;
+      ['intensity','undertone','coverage','finish','skin_type'].forEach(k => {
+        const v = params.get(k);
+        if (v) { answers[k] = v; changed = true; }
+      });
+      if (changed) applyAnswersToUI();
+      if (params.get('auto') === '1' && ['intensity','undertone','coverage','finish','skin_type'].every(k => !!answers[k])) {
+        showResults();
+      }
+    }
+
+    // Focus trap for modal (simple)
+    let focusTrapPrev = null;
+    function trapFocus(container) {
+      focusTrapPrev = document.activeElement;
+      const focusable = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      container.addEventListener('keydown', focusLoop);
+      function focusLoop(e) {
+        if (e.key !== 'Tab') return;
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+      setTimeout(() => first && first.focus(), 0);
+      container._focusLoop = focusLoop;
+    }
+    function releaseFocusTrap() {
+      if (focusTrapPrev) focusTrapPrev.focus();
+      if (quickModal._focusLoop) quickModal.removeEventListener('keydown', quickModal._focusLoop);
+      focusTrapPrev = null;
+    }
+
+    // Auto-advance from intensity when user commits the change
+    slider.addEventListener('change', () => {
+      collapseThenNext('q1');
+    });
+
+    // Initial progress and state
+  updateProgress();
+    updateStepIndicator();
+    updateNextButtonState(document.getElementById('q1'));
+  if (!restoreStateFromStorage()) restoreStateFromUrl();
+  renderSummary();
+  </script>
+</body>
+</html>
