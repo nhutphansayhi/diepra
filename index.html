@@ -57,7 +57,8 @@
       background-position: left center, left center; 
       border-radius: 5px; 
       outline: none; 
-      transition: background-size 0.2s ease; 
+      transition: background-size 160ms cubic-bezier(.22,.61,.36,1);
+      will-change: background-size;
     }
     input[type="range"]::-webkit-slider-thumb { 
       -webkit-appearance: none; 
@@ -156,9 +157,9 @@
       transition: width 0.5s ease; 
     }
     /* Summary bar */
-    #answers-summary { 
+  #answers-summary { 
       display: none; 
-      grid-template-columns: repeat(5, 1fr); 
+      grid-template-columns: repeat(4, 1fr); 
       gap: 16px; 
       align-items: stretch; 
       margin: 8px 0 16px; 
@@ -205,6 +206,14 @@
       margin: 10px 0; 
     }
     .results-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  /* Product recommendations */
+  .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 16px; }
+  .product-card { border: 1px solid #eee; border-radius: 10px; padding: 12px; background: #fff; display: flex; flex-direction: column; gap: 8px; }
+  .product-card img { width: 100%; height: 160px; object-fit: contain; border-radius: 8px; background: #fafafa; }
+  .product-card .pc-title { font-weight: 600; font-size: 14px; }
+  .product-card .pc-cat { font-size: 12px; color: #666; }
+  .product-card .pc-why { font-size: 12px; color: #333; }
+  .product-card .pc-use { font-size: 12px; color: #2f6f2f; }
     .btn-secondary { 
       background: #fff; 
       color: #000; 
@@ -261,159 +270,80 @@
   </style>
 </head>
 <body>
-  <div id="quiz-container">
-    <h1>Find Your Skincare + Serum and Lipstick Matches</h1>
-    <p class="intro">Answer a few quick questions to find the right skincare for you. Then, see your perfect partner serum and lipstick.</p>
-    
+  <div id="quiz-container" data-scroll-offset="0">
+    <h1>Find your 3/4/5-step skincare routine</h1>
+    <p class="intro">Answer a few quick questions. If you don’t have acne, we’ll skip severity and move on. You’ll get a routine tailored to your skin and preferred complexity.</p>
+
     <a href="#" id="start-over">Start Over</a>
-    <p>Already know your shade & formula? Select them now & find your serum & lip matches.</p>
-    <a href="#" id="select-now">SELECT NOW</a>
 
   <div id="progress-bar"><div id="progress"></div></div>
-    <div id="step-indicator" aria-live="polite">Step 1 of 5</div>
+  <div id="step-indicator" aria-live="polite">Step 1/4</div>
 
     <!-- Answers Summary (fills as you answer; stays compact) -->
     <div id="answers-summary" aria-live="polite"></div>
 
-    <!-- Quick Select Modal -->
-    <div id="quick-select" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="quick-select-title">
-      <div class="modal">
-        <header>
-          <h3 id="quick-select-title">Quick Select</h3>
-          <button class="close-modal" aria-label="Close" id="quick-close">×</button>
-        </header>
-        <p>Pick your choices instantly. We'll show results right away.</p>
-        <div class="row" id="qs-intensity" aria-label="Intensity" role="radiogroup">
-          <div class="option-box" data-key="intensity" data-value="light-medium" tabindex="0">Light-Medium</div>
-          <div class="option-box" data-key="intensity" data-value="medium" tabindex="0">Medium</div>
-          <div class="option-box" data-key="intensity" data-value="medium-deep" tabindex="0">Medium-Deep</div>
-          <div class="option-box" data-key="intensity" data-value="deep" tabindex="0">Deep</div>
-          <div class="option-box" data-key="intensity" data-value="extra-deep" tabindex="0">Extra-Deep</div>
-        </div>
-        <div class="row" id="qs-undertone" aria-label="Undertone" role="radiogroup">
-          <div class="option-box" data-key="undertone" data-value="cool" tabindex="0">Cool</div>
-          <div class="option-box" data-key="undertone" data-value="neutral" tabindex="0">Neutral</div>
-          <div class="option-box" data-key="undertone" data-value="warm" tabindex="0">Warm</div>
-        </div>
-        <div class="row" id="qs-coverage" aria-label="Coverage" role="radiogroup">
-          <div class="option-box" data-key="coverage" data-value="sheer" tabindex="0">Sheer</div>
-          <div class="option-box" data-key="coverage" data-value="medium" tabindex="0">Medium</div>
-          <div class="option-box" data-key="coverage" data-value="full" tabindex="0">Full</div>
-        </div>
-        <div class="row" id="qs-finish" aria-label="Finish" role="radiogroup">
-          <div class="option-box" data-key="finish" data-value="matte" tabindex="0">Matte</div>
-          <div class="option-box" data-key="finish" data-value="dewy" tabindex="0">Dewy</div>
-          <div class="option-box" data-key="finish" data-value="natural" tabindex="0">Natural</div>
-        </div>
-        <div class="row" id="qs-skin" aria-label="Skin Type" role="radiogroup">
-          <div class="option-box" data-key="skin_type" data-value="dry" tabindex="0">Dry</div>
-          <div class="option-box" data-key="skin_type" data-value="oily" tabindex="0">Oily</div>
-          <div class="option-box" data-key="skin_type" data-value="combination" tabindex="0">Combination</div>
-          <div class="option-box" data-key="skin_type" data-value="normal" tabindex="0">Normal</div>
-        </div>
-        <footer>
-          <button class="btn-secondary" id="quick-cancel">Cancel</button>
-          <button class="next" id="quick-apply" disabled>Show Results</button>
-        </footer>
-      </div>
-    </div>
+  <!-- Removed Quick Select modal to simplify skincare flow -->
 
     <div id="q1" class="question-section active">
-      <h2>Choose your skin intensity.</h2>
+      <h2>Choose your skin type</h2>
       <div class="intensity-wrapper">
-        <div class="faces">
-          <div class="face" data-value="1" data-label="LIGHT-MEDIUM" tabindex="0"><img src="light.png" alt="Light-Medium"><div class="face-label">LIGHT-MEDIUM</div></div>
-          <div class="face" data-value="2" data-label="MEDIUM" tabindex="0"><img src="light-medium.png" alt="Medium"><div class="face-label">MEDIUM</div></div>
-          <div class="face" data-value="3" data-label="MEDIUM-DEEP" tabindex="0"><img src="medium.png" alt="Medium-Deep"><div class="face-label">MEDIUM-DEEP</div></div>
-          <div class="face" data-value="4" data-label="DEEP" tabindex="0"><img src="medium-deep.png" alt="Deep"><div class="face-label">DEEP</div></div>
-          <div class="face" data-value="5" data-label="EXTRA-DEEP" tabindex="0"><img src="deep.png" alt="Extra-Deep"><div class="face-label">EXTRA-DEEP</div></div>
-          <div class="face" data-value="6" data-label="ULTRA-DEEP" tabindex="0"><img src="extra-deep.png" alt="Ultra-Deep"><div class="face-label">ULTRA-DEEP</div></div>
-          <div class="face" data-value="7" data-label="DEEPEST" tabindex="0"><img src="deepest.png" alt="Deepest"><div class="face-label">DEEPEST</div></div>
+        <div class="faces" role="radiogroup" aria-label="Loại da">
+          <div class="face" data-value="oily" data-label="OILY" tabindex="0"><img src="img/skin/SKIN_TYPE_-_OILY.jpg" alt="Oily"><div class="face-label">OILY</div></div>
+          <div class="face" data-value="combination" data-label="COMBINATION" tabindex="0"><img src="img/skin/SKIN_TYPE_-_COMBINATION.jpg" alt="Combination"><div class="face-label">COMBINATION</div></div>
+          <div class="face" data-value="dry" data-label="DRY" tabindex="0"><img src="img/skin/SKIN_TYPE_-_DRY.jpg" alt="Dry"><div class="face-label">DRY</div></div>
+          <div class="face" data-value="normal" data-label="NORMAL" tabindex="0"><img src="img/skin/SKIN_TYPE_-_NORMAL.jpg" alt="Normal"><div class="face-label">NORMAL</div></div>
         </div>
-        <input type="range" id="intensity-slider" min="1" max="7" step="1" value="1">
       </div>
-      <button class="next" data-next="q2">NEXT</button>
+      <button class="next" data-next="q2" disabled>NEXT</button>
     </div>
 
     <div id="q2" class="question-section">
-      <h2>Select your undertone.</h2>
-      <div class="tile-grid" id="undertone-tiles">
-        <!-- Insert image by setting style background-image:url('path') or data-img attribute -->
-        <div class="tile-option" data-value="cool" data-img="" style="background-image: url('');"><div class="tile-label">COOL</div></div>
-        <div class="tile-option" data-value="neutral" data-img="" style="background-image: url('');"><div class="tile-label">NEUTRAL</div></div>
-        <div class="tile-option" data-value="warm" data-img="" style="background-image: url('');"><div class="tile-label">WARM</div></div>
+      <h2>Do you currently have acne?</h2>
+      <div class="options" role="radiogroup" aria-label="Acne yes or no">
+        <div class="option-box" data-value="yes" tabindex="0"><span class="label">YES</span></div>
+        <div class="option-box" data-value="no" tabindex="0"><span class="label">NO</span></div>
       </div>
-      <button class="next" data-next="q3">NEXT</button>
+      <button class="next" data-next="q3" disabled>NEXT</button>
     </div>
 
     <div id="q3" class="question-section">
-      <h2>Select your coverage.</h2>
-      <div class="tile-grid" id="coverage-tiles">
-        <!-- Insert image by setting background-image or data-img -->
-        <div class="tile-option" data-value="sheer" data-img="" style="background-image:url('');"><div class="tile-label">SHEER</div></div>
-        <div class="tile-option" data-value="medium" data-img="" style="background-image:url('');"><div class="tile-label">MEDIUM</div></div>
-        <div class="tile-option" data-value="full" data-img="" style="background-image:url('');"><div class="tile-label">FULL</div></div>
+      <h2>How severe is your acne?</h2>
+      <div class="options" role="radiogroup" aria-label="Acne severity">
+        <div class="option-box" data-value="mild" tabindex="0"><span class="label">MILD</span></div>
+        <div class="option-box" data-value="severe" tabindex="0"><span class="label">SEVERE</span></div>
       </div>
-      <button class="next" data-next="q4">NEXT</button>
+      <button class="next" data-next="q4" disabled>NEXT</button>
     </div>
 
     <div id="q4" class="question-section">
-      <h2>Select your finish.</h2>
-      <div class="tile-grid" id="finish-tiles">
-        <!-- Insert image by setting background-image or data-img -->
-        <div class="tile-option" data-value="dewy" data-img="" style="background-image:url('');"><div class="tile-label">RADIANT GLOW</div></div>
-        <div class="tile-option" data-value="natural" data-img="" style="background-image:url('');"><div class="tile-label">SEMI-MATTE, SATIN</div></div>
-        <div class="tile-option" data-value="matte" data-img="" style="background-image:url('');"><div class="tile-label">MATTE</div></div>
+      <h2>How complex do you want your routine?</h2>
+  <div class="options" role="radiogroup" aria-label="Routine complexity">
+        <div class="option-box" data-value="simple" tabindex="0"><span class="label">SIMPLE (3 steps)</span></div>
+        <div class="option-box" data-value="normal" tabindex="0"><span class="label">STANDARD (4 steps)</span></div>
+        <div class="option-box" data-value="thorough" tabindex="0"><span class="label">THOROUGH (5 steps)</span></div>
       </div>
-      <button class="next" data-next="q5">NEXT</button>
-    </div>
-
-    <div id="q5" class="question-section">
-      <h2>Select your skin type.</h2>
-      <div class="options">
-        <!-- Insert image by setting the .thumb background-image url('path') or data-img on container -->
-        <div class="option-box" data-value="dry" data-img=""><div class="thumb" style="background-image: url('');"></div><span class="label">DRY</span></div>
-        <div class="option-box" data-value="oily" data-img=""><div class="thumb" style="background-image: url('');"></div><span class="label">OILY</span></div>
-        <div class="option-box" data-value="combination" data-img=""><div class="thumb" style="background-image: url('');"></div><span class="label">COMBINATION</span></div>
-        <div class="option-box" data-value="normal" data-img=""><div class="thumb" style="background-image: url('');"></div><span class="label">NORMAL</span></div>
-      </div>
-      <button class="next" data-next="results">SUBMIT</button>
+  <button class="next" data-next="results" disabled>SUBMIT</button>
     </div>
 
     <div id="results">
-      <h2>Your Results</h2>
-      <p>Skincare, serum & lipstick recommendations just for you.</p>
-      
-      <section id="skincare-rec">
-        <h3>Skincare</h3>
-        <p>Stock up on your favorite, then scroll down for some serum & lipstick recommendations just for you.</p>
-        <img class="product-img" src="product/pro1.png" alt="Skincare">
-        <p id="skincare-text"></p>
+      <h2>Your recommended routine</h2>
+      <p>We’ve tailored this routine to your skin profile and the complexity you prefer. AM/PM tips are included where helpful.</p>
+      <section id="routine">
+        <div class="routine-block" style="margin-bottom:12px;">
+          <h3 style="margin:0 0 6px;">AM routine</h3>
+          <ol id="routine-am" style="padding-left: 18px; line-height: 1.6;"></ol>
+        </div>
+        <div class="routine-block" style="margin-bottom:12px;">
+          <h3 style="margin:0 0 6px;">PM routine</h3>
+          <ol id="routine-pm" style="padding-left: 18px; line-height: 1.6;"></ol>
+        </div>
+        <p id="routine-notes" style="margin-top:10px; color:#444;"></p>
       </section>
-      
-      <section id="serum-rec">
-        <h3>Serum</h3>
-        <p>Try these shade(s) & formula(s). Keep scrolling for your lipstick matches.</p>
-        <img class="product-img" src="product/pro2.png" alt="Serum">
-        <p id="serum-text"></p>
+      <section id="product-recos-section" style="margin-top: 18px;">
+        <h3 style="margin-bottom:8px;">Recommended products for you</h3>
+        <div id="product-recos" class="product-grid"></div>
       </section>
-      
-      <section id="lipstick-rec">
-        <h3>Lipstick</h3>
-        <p>Finish your look with lipstick in one of these recommended shades from every shade family.</p>
-        <img class="product-img" src="product/pro3.png" alt="Lipstick">
-        <p id="lipstick-text"></p>
-      </section>
-      
-      <section id="primer-rec">
-        <h3>Primer</h3>
-        <p>Choose a high-performance primer.</p>
-        <img class="product-img" src="product/pro4.png" alt="Primer">
-      </section>
-      
       <section>
-        <h3>Get The Look</h3>
-        <p>Step 1: Prep skin with your favorite primer.<br>Step 2: Follow with skincare.<br>Step 3: Apply serum where needed.<br>Step 4: Finish with lipstick for a pop of color.</p>
         <div class="results-actions">
           <button class="btn-secondary" id="edit-answers">Edit Answers</button>
           <button class="btn-secondary" id="share-results">Share Results</button>
@@ -424,117 +354,60 @@
 
   <script>
     // State
-    const questions = ['q1', 'q2', 'q3', 'q4', 'q5'];
+  const questions = ['q1', 'q2', 'q3', 'q4'];
     const totalSteps = questions.length;
     const answers = {};
     const progress = document.getElementById('progress');
     const stepIndicator = document.getElementById('step-indicator');
     const startOver = document.getElementById('start-over');
-    const selectNow = document.getElementById('select-now');
   const resultsDiv = document.getElementById('results');
   const summary = document.getElementById('answers-summary');
-
-    // Intensity slider
-    const slider = document.getElementById('intensity-slider');
+    // Faces (skin type)
     const faces = document.querySelectorAll('.face');
-    function updateSliderVisual(value) {
-      const min = Number(slider.min) || 1;
-      const max = Number(slider.max) || 5;
-      const pct = ((value - min) / (max - min)) * 100;
-      slider.style.setProperty('--progress', pct + '%');
-    }
-
-    slider.addEventListener('input', (e) => {
-      const value = e.target.value;
-      faces.forEach(face => {
-        face.classList.toggle('selected', face.dataset.value === value);
-      });
-      const selectedFace = Array.from(faces).find(f => f.dataset.value === String(value));
-      const label = selectedFace ? (selectedFace.dataset.label || selectedFace.querySelector('.face-label')?.textContent || '') : '';
-      const mapValues = ['light-medium','medium','medium-deep','deep','extra-deep','ultra-deep','deepest'];
-      answers.intensity = mapValues[(Number(value)-1)];
-      answers.intensity_label = label;
-      persistState();
-      updateNextButtonState(document.getElementById('q1'));
-      updateSliderVisual(Number(value));
-      renderSummary();
-    });
-    slider.addEventListener('pointerdown', () => slider.classList.add('dragging'));
-    slider.addEventListener('pointerup', () => slider.classList.remove('dragging'));
-    // Initial select
-  faces[0].classList.add('selected');
-  answers.intensity = 'light-medium';
-  answers.intensity_label = faces[0].dataset?.label || 'LIGHT-MEDIUM';
-    updateSliderVisual(1);
-
-    // Faces: click or keyboard to pick value
-    faces.forEach(face => {
+  faces.forEach(face => {
       face.addEventListener('click', () => {
-        slider.value = face.dataset.value;
-        slider.dispatchEvent(new Event('input'));
+        faces.forEach(f => f.classList.remove('selected'));
         face.classList.add('selected');
+        answers.skin_type = face.dataset.value;
+        answers.skin_type_label = face.dataset.label || face.querySelector('.face-label')?.textContent || '';
+        persistState();
+        updateNextButtonState(document.getElementById('q1'));
+        renderSummary();
+    // Auto-advance to next section
+    collapseThenNext('q1');
       });
       face.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter' || ev.key === ' ') {
-          ev.preventDefault();
-          slider.value = face.dataset.value;
-          slider.dispatchEvent(new Event('input'));
-        }
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); face.click(); }
       });
     });
 
-  // Option boxes (per-question)
-    document.querySelectorAll('#q2 .option-box, #q3 .option-box, #q4 .option-box, #q5 .option-box').forEach(box => {
+    // Option boxes (q2, q3)
+  document.querySelectorAll('#q2 .option-box, #q3 .option-box, #q4 .option-box').forEach(box => {
       box.addEventListener('click', (e) => {
         const targetBox = e.currentTarget;
-        const group = targetBox.closest('.options, .undertone-options, .tile-grid');
+        const group = targetBox.closest('.options');
         const siblings = group.querySelectorAll('.option-box');
         siblings.forEach(s => s.classList.remove('selected'));
         targetBox.classList.add('selected');
         const qId = targetBox.closest('.question-section').id;
-        const key = qId === 'q2' ? 'undertone' : qId === 'q3' ? 'coverage' : qId === 'q4' ? 'finish' : 'skin_type';
+        const key = qId === 'q2' ? 'has_acne' : (qId === 'q3' ? 'acne_severity' : 'complexity');
         answers[key] = targetBox.dataset.value;
         answers[key + '_label'] = (targetBox.querySelector('.label')?.textContent || targetBox.textContent || '').trim();
         persistState();
         updateNextButtonState(targetBox.closest('.question-section'));
         renderSummary();
-        // Collapse with animation then go next
-        collapseThenNext(qId);
+    // Auto-advance for Q2/Q3 only; Q4 waits for explicit submit
+    if (qId !== 'q4') { collapseThenNext(qId); }
       });
-      box.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); box.click(); }
-      });
-    });
-
-  // Tile options for undertone, coverage and finish (image tiles)
-  document.querySelectorAll('#undertone-tiles .tile-option, #coverage-tiles .tile-option, #finish-tiles .tile-option').forEach(tile => {
-      tile.addEventListener('click', (e) => {
-        const t = e.currentTarget;
-        const parent = t.parentElement;
-  parent.querySelectorAll('.tile-option').forEach(n => { n.classList.remove('selected'); n.setAttribute('aria-pressed', 'false'); });
-        t.classList.add('selected');
-  t.setAttribute('aria-pressed', 'true');
-        const qId = t.closest('.question-section').id;
-    const key = qId === 'q3' ? 'coverage' : (qId === 'q4' ? 'finish' : 'undertone');
-        answers[key] = t.dataset.value;
-    answers[key + '_label'] = (t.querySelector('.tile-label')?.textContent || '').trim();
-        persistState();
-        updateNextButtonState(t.closest('.question-section'));
-    renderSummary();
-    collapseThenNext(qId);
-      });
-      tile.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); tile.click(); } });
-      tile.setAttribute('tabindex', '0');
-      tile.setAttribute('role', 'button');
-      tile.setAttribute('aria-pressed', 'false');
+      box.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); box.click(); } });
     });
 
   // Next buttons
     document.querySelectorAll('.next').forEach(btn => {
       btn.addEventListener('click', (e) => {
         if (btn.hasAttribute('disabled')) return;
-    const currentId = e.target.closest('.question-section').id;
-    goToNextSection(currentId);
+  const currentId = e.target.closest('.question-section').id;
+  goToNextSection(currentId);
       });
     });
 
@@ -547,9 +420,9 @@
     function updateStepIndicator() {
       const currentIndex = questions.findIndex(q => document.getElementById(q).classList.contains('active'));
       if (currentIndex >= 0) {
-        stepIndicator.textContent = `Step ${currentIndex + 1} of ${totalSteps}`;
+  stepIndicator.textContent = `Step ${currentIndex + 1}/${totalSteps}`;
       } else {
-        stepIndicator.textContent = `Completed`;
+  stepIndicator.textContent = `Completed`;
       }
     }
 
@@ -558,10 +431,10 @@
       const btn = sectionEl.querySelector('.next');
       if (!btn) return;
       let enabled = true;
-      if (sectionEl.id === 'q2') enabled = !!answers.undertone;
-      if (sectionEl.id === 'q3') enabled = !!answers.coverage;
-      if (sectionEl.id === 'q4') enabled = !!answers.finish;
-      if (sectionEl.id === 'q5') enabled = !!answers.skin_type;
+  if (sectionEl.id === 'q1') enabled = !!answers.skin_type;
+  if (sectionEl.id === 'q2') enabled = !!answers.has_acne;
+  if (sectionEl.id === 'q3') enabled = !!answers.acne_severity;
+  if (sectionEl.id === 'q4') enabled = !!answers.complexity;
       if (enabled) btn.removeAttribute('disabled'); else btn.setAttribute('disabled', 'true');
     }
 
@@ -596,11 +469,10 @@
       const container = document.getElementById('answers-summary');
       if (!container) return;
       const items = [
-        { key: 'intensity', label: 'INTENSITY', value: (answers.intensity_label || answers.intensity) },
-        { key: 'undertone', label: 'UNDERTONE', value: (answers.undertone_label || answers.undertone) },
-        { key: 'coverage', label: 'COVERAGE', value: (answers.coverage_label || answers.coverage) },
-        { key: 'finish', label: 'FINISH', value: (answers.finish_label || answers.finish) },
-        { key: 'skin_type', label: 'SKIN TYPE', value: (answers.skin_type_label || answers.skin_type) },
+  { key: 'skin_type', label: 'SKIN TYPE', value: (answers.skin_type_label || answers.skin_type) },
+  { key: 'has_acne', label: 'ACNE', value: (answers.has_acne === 'yes' ? 'YES' : answers.has_acne === 'no' ? 'NO' : '') },
+  { key: 'acne_severity', label: 'SEVERITY', value: (answers.acne_severity_label || (answers.has_acne === 'no' ? '—' : answers.acne_severity)) },
+  { key: 'complexity', label: 'COMPLEXITY', value: (answers.complexity === 'simple' ? 'SIMPLE' : answers.complexity === 'normal' ? 'STANDARD' : answers.complexity === 'thorough' ? 'THOROUGH' : '') },
       ];
       const any = items.some(i => !!i.value);
       if (!any) { container.classList.remove('visible'); container.innerHTML = ''; return; }
@@ -616,7 +488,11 @@
     // Auto-advance helper
     function goToNextSection(currentId) {
       const currentIndex = questions.indexOf(currentId);
-      const nextId = currentIndex >= 0 && currentIndex < questions.length - 1 ? questions[currentIndex + 1] : 'results';
+      let nextId = currentIndex >= 0 && currentIndex < questions.length - 1 ? questions[currentIndex + 1] : 'results';
+      // Skip Q3 (acne severity) if no acne in Q2; go to Q4
+      if (currentId === 'q2' && answers.has_acne === 'no') {
+        nextId = 'q4';
+      }
       const currentEl = document.getElementById(currentId);
       if (currentEl) {
         currentEl.classList.remove('active');
@@ -683,44 +559,226 @@
     }
 
   function showResults() {
-      // Check if all required answered
-      const required = ['intensity','undertone','coverage','finish','skin_type'];
-      if (!required.every(k => !!answers[k])) {
-        resultsDiv.innerHTML = '<p class="no-results">Unfortunately no search results were found for your entered criteria.</p>';
+  // Required: skin_type, has_acne; if has_acne=yes, also acne_severity; and complexity
+  if (!answers.skin_type || !answers.has_acne || (answers.has_acne === 'yes' && !answers.acne_severity) || !answers.complexity) {
+  resultsDiv.innerHTML = '<p class="no-results">Please answer all questions to view your routine.</p>';
         resultsDiv.style.display = 'block';
         return;
       }
 
-      // Simple logic (adjust as needed)
-      let score = 0;
-      if (answers.intensity === 'deep' || answers.intensity === 'extra-deep') score += 3;
-      if (answers.undertone === 'warm') score += 2;
-      if (answers.coverage === 'full' || answers.coverage === 'medium') score += 3;
-      if (answers.finish === 'matte') score += 1;
-      if (answers.skin_type === 'oily') score += 2;
+  const routine = buildRoutineSteps(answers);
+  const amList = document.getElementById('routine-am');
+  const pmList = document.getElementById('routine-pm');
+  const notesEl = document.getElementById('routine-notes');
+  amList.innerHTML = routine.am.map((s, i) => `<li><strong>Step ${i + 1}: ${s.title}</strong> — ${s.desc}</li>`).join('');
+  pmList.innerHTML = routine.pm.map((s, i) => `<li><strong>Step ${i + 1}: ${s.title}</strong> — ${s.desc}</li>`).join('');
+  notesEl.textContent = routine.notes || '';
 
-      const skincare = score > 8 
-        ? 'Diepra Balance+ Gel-Cream (oil-controlling, lightweight hydration)'
-        : answers.skin_type === 'dry' ? 'Diepra Hydrate+ Rich Cream (long-lasting moisture)' : 'Diepra Calm+ Daily Moisturizer (balanced hydration)';
-      const serum = (answers.coverage === 'full' || answers.coverage === 'medium' || answers.finish === 'matte')
-        ? 'Diepra Perfecting Serum+ (pore-refining, high-performance)'
-        : 'Diepra Glow Serum (brightening, natural radiance)';
-      const lipstick = (answers.undertone === 'warm')
-        ? 'Diepra Luxe Matte in Terra Rose or Amber Nude'
-        : answers.undertone === 'cool' ? 'Diepra Satin in Berry Mauve or Soft Plum' : 'Diepra Cream in Peony Pink or Tawny Beige';
+      // Render product cards
+      const recos = document.getElementById('product-recos');
+      if (recos) {
+        const picks = buildProductPicks(answers);
+        recos.innerHTML = picks.map(p => `
+          <div class="product-card">
+            ${p.img ? `<img src="${p.img}" alt="${p.name}">` : ''}
+            <div class="pc-cat">${p.category}</div>
+            <div class="pc-title">${p.name}</div>
+            <div class="pc-why">${p.why}</div>
+            ${p.use ? `<div class="pc-use">${p.use}</div>` : ''}
+          </div>
+        `).join('');
+      }
 
-      const skinP = document.getElementById('skincare-text');
-      const serumP = document.getElementById('serum-text');
-      const lipP = document.getElementById('lipstick-text');
-      if (skinP) skinP.textContent = `Recommended: ${skincare}.`;
-      if (serumP) serumP.textContent = `Try: ${serum}.`;
-      if (lipP) lipP.textContent = `Finish with: ${lipstick}.`;
-
-  resultsDiv.style.display = 'block';
-  progress.style.width = '100%';
-  renderSummary();
+      resultsDiv.style.display = 'block';
+      progress.style.width = '100%';
+      renderSummary();
       updateStepIndicator();
       persistState(true);
+    }
+
+    function buildRoutineSteps(a) {
+      const st = a.skin_type; // oily | combination | dry | normal
+      const hasAcne = a.has_acne === 'yes';
+      const sev = a.acne_severity; // mild | severe | undefined
+      const cx = a.complexity || 'normal'; // simple | normal | thorough
+      // Product catalog mapping
+      const PRODUCTS = {
+        cleanser: {
+          name: 'Centella All-Rounder Ampoule Cleanser',
+          desc: 'Calming, hydrating cleanser with high-quality Madagascan Centella Asiatica to soothe redness and irritation.',
+          match: 'Best for Sensitive, Acne, Normal skin.',
+          keys: 'Key: Centella Asiatica Extract.'
+        },
+        remover: {
+          name: 'Hyaluro-Centella Cleansing Milk',
+          desc: 'Mild milk cleanser with 8 HA and Madagascar Centella Asiatica. Gently removes makeup, sunscreen, impurities; supports moisture barrier.',
+          match: 'Best for Sensitive, Dry, Dehydrated, Normal skin.',
+          keys: 'Key: Centella Asiatica, 8 HA, Ceramide NP, Panthenol, Jojoba Seed.'
+        },
+        acne: {
+          name: 'Tea Tree + Pine Blemish Ampoule',
+          desc: 'Non-comedogenic ampoule with Tea Tree, Pine, Cypress to support blemish-prone, sensitive, oily skin.',
+          match: 'Best for Acne, Oily, Sensitive skin.',
+          keys: 'Key: Centella, Tea Tree Leaf Water, Pine Leaf Extract, Evening Primrose, Cypress Water.'
+        },
+        moisturizer: {
+          name: '100H Hydro-Collagen Cream',
+          desc: 'Lightweight cream with 5 Hyaluronic Acids + Hydrolyzed Collagen for deep, long-lasting hydration (up to 100 hours).',
+          match: 'Best for Sensitive, Normal, Dry skin.',
+          keys: 'Key: Centella, Hyaluronic Acid, Hydrolyzed Collagen.'
+        },
+        sunscreen: {
+          name: 'SPF 50+ PA++++ Ultra-Light Sun Shield',
+          desc: 'Lightweight, non-sticky sunscreen with a dewy, no white-cast finish. Hydrates and soothes; reef-safe.',
+          match: 'Suitable for all skin types, even sensitive.',
+          keys: 'Key: Hyalu-Cica Formula, Baby Green Complex (7 extracts), UV filters.',
+          how: 'Use as the last step of AM routine. Apply generously to all exposed areas.'
+        }
+      };
+
+      const am = [];
+      const pm = [];
+
+      // PM: Makeup remover (thorough)
+      if (cx === 'thorough') {
+        pm.push({
+          title: 'Makeup Remover',
+          desc: `${PRODUCTS.remover.name} — ${PRODUCTS.remover.desc} ${PRODUCTS.remover.match} ${PRODUCTS.remover.keys} Use: At night when wearing makeup/sunscreen, before cleanser.`
+        });
+      }
+
+      // AM Cleanser
+      am.push({
+        title: 'Cleanser',
+        desc: `${PRODUCTS.cleanser.name} — ${PRODUCTS.cleanser.desc} ${PRODUCTS.cleanser.match} ${PRODUCTS.cleanser.keys}`
+      });
+      // PM Cleanser
+      pm.push({
+        title: 'Cleanser',
+        desc: `${PRODUCTS.cleanser.name} — Gentle cleanse to remove the day and prep skin. ${PRODUCTS.cleanser.keys}`
+      });
+
+      // Treatment: integrate only when acne present and not simple
+      if (hasAcne && cx !== 'simple') {
+        const nuanceAm = 'Light layer or spot treatment if skin tolerates.';
+        const nuancePm = sev === 'severe'
+          ? 'Introduce slowly at night; patch-test; consult a dermatologist for persistent/severe acne.'
+          : 'Use nightly or every other night; spot-apply on active blemishes.';
+        // AM (optional if tolerable)
+        am.push({
+          title: 'Acne Treatment',
+          desc: `${PRODUCTS.acne.name} — ${PRODUCTS.acne.desc} ${PRODUCTS.acne.match} ${PRODUCTS.acne.keys} Tips: ${nuanceAm}`
+        });
+        // PM (primary)
+        pm.push({
+          title: 'Acne Treatment',
+          desc: `${PRODUCTS.acne.name} — ${PRODUCTS.acne.desc} ${PRODUCTS.acne.match} ${PRODUCTS.acne.keys} Tips: ${nuancePm}`
+        });
+      }
+
+      // Moisturizer (AM/PM)
+      am.push({
+        title: 'Moisturizer',
+        desc: `${PRODUCTS.moisturizer.name} — ${PRODUCTS.moisturizer.desc} ${PRODUCTS.moisturizer.match} ${PRODUCTS.moisturizer.keys}`
+      });
+      pm.push({
+        title: 'Moisturizer',
+        desc: `${PRODUCTS.moisturizer.name} — Lock in moisture overnight to support barrier recovery. ${PRODUCTS.moisturizer.keys}`
+      });
+
+      // Sunscreen (AM)
+      am.push({
+        title: 'Sunscreen',
+        desc: `${PRODUCTS.sunscreen.name} — ${PRODUCTS.sunscreen.desc} ${PRODUCTS.sunscreen.match} ${PRODUCTS.sunscreen.keys} How: ${PRODUCTS.sunscreen.how}`
+      });
+
+      // Complexity simplification: if simple, remove treatment from AM/PM
+      if (cx === 'simple') {
+        const stripTreatment = arr => arr.filter(s => s.title !== 'Acne Treatment');
+        return {
+          am: stripTreatment(am),
+          pm: stripTreatment(pm),
+          notes: hasAcne
+            ? 'Simple mode: Keep it gentle. At night, you may spot-treat active blemishes if needed and tolerated.'
+            : 'Simple mode: Consistent cleanse → moisturize; sunscreen every AM.',
+          for: st
+        };
+      }
+
+      // Notes
+      let notes = hasAcne
+        ? 'Introduce actives slowly (1-2x/week), increase as tolerated. Support your barrier; avoid over-exfoliation.'
+        : 'AM = Cleanser → Moisturizer → Sunscreen. PM = (Makeup Remover if needed) → Cleanser → Moisturizer.';
+
+      return { am, pm, notes, for: st };
+    }
+
+    // Build product picks aligned with user choices
+    function buildProductPicks(a) {
+      const st = a.skin_type; // oily | combination | dry | normal
+      const hasAcne = a.has_acne === 'yes';
+      const sev = a.acne_severity;
+      const cx = a.complexity || 'normal';
+
+      // Image paths available in repo (fallback to none if missing)
+      const IMG = {
+        remover: 'img/product/moi 3d (1).png', // using available image as placeholder
+        cleanser: 'img/product/cleanser (4).png',
+        acne: 'img/product/cleanser (1).png', // placeholder if acne product image is not provided
+        moisturizer: 'img/product/moisturizer (1).png',
+        sunscreen: 'img/product/sunscreen (1).png'
+      };
+
+      // Same names as routine mapping
+      const P = {
+        remover: 'Hyaluro-Centella Cleansing Milk',
+        cleanser: 'Centella All-Rounder Ampoule Cleanser',
+        acne: 'Tea Tree + Pine Blemish Ampoule',
+        moisturizer: '100H Hydro-Collagen Cream',
+        sunscreen: 'SPF 50+ PA++++ Ultra-Light Sun Shield'
+      };
+
+      const picks = [];
+
+      // Thorough: show remover
+      if (cx === 'thorough') {
+        picks.push({
+          category: 'Makeup Remover', name: P.remover, img: IMG.remover,
+          why: 'Use at night when wearing makeup/sunscreen; gentle milk removes impurities while supporting the barrier.',
+          use: 'PM as needed before cleanser.'
+        });
+      }
+      // Cleanser
+      picks.push({
+        category: 'Cleanser', name: P.cleanser, img: IMG.cleanser,
+        why: 'Centella-based gentle cleanse to calm and hydrate. Suitable even for sensitive skin.',
+        use: 'AM/PM after remover (if used).'
+      });
+
+      // Treatment
+      if (hasAcne && cx !== 'simple') {
+        picks.push({
+          category: 'Acne Treatment', name: P.acne, img: IMG.acne,
+          why: sev === 'severe' ? 'Targeted support for blemish-prone skin; introduce slowly and consult a dermatologist for persistent acne.' : 'Target active blemishes; nightly or every other night.',
+          use: sev === 'severe' ? 'Start low frequency at night; patch-test; consider medical advice.' : 'Apply thin layer or spot-treat after cleansing.'
+        });
+      }
+
+      // Moisturizer
+      picks.push({
+        category: 'Moisturizer', name: P.moisturizer, img: IMG.moisturizer,
+        why: st === 'dry' ? 'Rich hydration with 5 HA + hydrolyzed collagen to support a dry barrier.' : 'Lightweight hydration to support barrier without heaviness.',
+        use: 'AM/PM after treatment/essence.'
+      });
+
+      // Sunscreen
+      picks.push({
+        category: 'Sunscreen', name: P.sunscreen, img: IMG.sunscreen,
+        why: 'Broad-spectrum daily protection with a comfortable, non-sticky finish.',
+        use: 'AM as the last step. Apply generously to exposed areas.'
+      });
+
+      return picks;
     }
 
     startOver.addEventListener('click', (e) => {
@@ -734,11 +792,7 @@
       resultsDiv.style.display = 'none';
       progress.style.width = '0%';
   Object.keys(answers).forEach(key => delete answers[key]);
-      slider.value = 1;
       faces.forEach(f => f.classList.remove('selected'));
-      faces[0].classList.add('selected');
-  answers.intensity = 'light-medium';
-  answers.intensity_label = faces[0].dataset?.label || 'LIGHT-MEDIUM';
       document.querySelectorAll('.option-box').forEach(b => b.classList.remove('selected'));
       updateProgress();
       updateStepIndicator();
@@ -747,68 +801,7 @@
       history.replaceState({}, '', location.pathname);
   renderSummary();
     });
-
-    selectNow.addEventListener('click', (e) => {
-      e.preventDefault();
-      openQuickSelect();
-    });
-
-    // Quick Select modal logic
-    const quickModal = document.getElementById('quick-select');
-    const quickClose = document.getElementById('quick-close');
-    const quickCancel = document.getElementById('quick-cancel');
-    const quickApply = document.getElementById('quick-apply');
-
-    function openQuickSelect() { quickModal.classList.add('active'); trapFocus(quickModal); refreshQuickSelectState(); }
-    function closeQuickSelect() { quickModal.classList.remove('active'); releaseFocusTrap(); }
-    quickClose.addEventListener('click', closeQuickSelect);
-    quickCancel.addEventListener('click', closeQuickSelect);
-    quickModal.addEventListener('click', (e) => { if (e.target === quickModal) closeQuickSelect(); });
-
-    function refreshQuickSelectState() {
-      // sync selected states from answers
-      quickModal.querySelectorAll('.option-box').forEach(b => b.classList.remove('selected'));
-      ['intensity','undertone','coverage','finish','skin_type'].forEach(k => {
-        const v = answers[k];
-        if (!v) return;
-        const el = quickModal.querySelector(`.option-box[data-key="${k}"][data-value="${v}"]`);
-        if (el) el.classList.add('selected');
-      });
-      updateQuickApplyState();
-    }
-
-    function updateQuickApplyState() {
-      const needed = ['intensity','undertone','coverage','finish','skin_type'];
-      const ok = needed.every(k => !!answers[k]);
-      quickApply.toggleAttribute('disabled', !ok);
-    }
-
-    quickModal.querySelectorAll('.option-box').forEach(b => {
-      b.addEventListener('click', (e) => {
-        const box = e.currentTarget;
-        const key = box.dataset.key;
-        const group = box.parentElement;
-        group.querySelectorAll('.option-box').forEach(s => s.classList.remove('selected'));
-        box.classList.add('selected');
-        answers[key] = box.dataset.value;
-        persistState();
-        updateQuickApplyState();
-      });
-      b.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); b.click(); } });
-    });
-
-    quickApply.addEventListener('click', () => {
-      // Sync quiz UI from answers then show results
-      applyAnswersToUI();
-      closeQuickSelect();
-      questions.forEach(q => {
-        const el = document.getElementById(q);
-        el.classList.remove('active');
-        el.classList.add('completed');
-      });
-      showResults();
-      updateProgress();
-    });
+    // Removed Quick Select modal logic
 
     // Share and edit actions
     document.getElementById('edit-answers').addEventListener('click', () => {
@@ -838,7 +831,8 @@
       const data = { answers, includeResults };
       localStorage.setItem('beautyQuiz', JSON.stringify(data));
       const url = new URL(location.href);
-      Object.entries(answers).forEach(([k,v]) => url.searchParams.set(k, v));
+      url.searchParams.forEach((_, key) => { url.searchParams.delete(key); });
+      Object.entries(answers).forEach(([k,v]) => { if (v) url.searchParams.set(k, v); });
       history.replaceState({}, '', `${url.pathname}?${url.searchParams.toString()}`);
     }
 
@@ -856,50 +850,37 @@
     }
 
     function applyAnswersToUI() {
-      // intensity
-  const map = { 'light-medium':1, 'medium':2, 'medium-deep':3, 'deep':4, 'extra-deep':5, 'ultra-deep':6, 'deepest':7 };
-      if (answers.intensity && map[answers.intensity]) {
-        slider.value = String(map[answers.intensity]);
-        slider.dispatchEvent(new Event('input'));
-      }
-      // reset selections
-      document.querySelectorAll('#q2 .option-box, #q3 .option-box, #q4 .option-box, #q5 .option-box').forEach(b => b.classList.remove('selected'));
-      // apply per question
-      if (answers.undertone) {
-        const el = document.querySelector(`#q2 .option-box[data-value="${answers.undertone}"]`); if (el) el.classList.add('selected');
-      }
-      if (answers.coverage) {
-        const el = document.querySelector(`#q3 .option-box[data-value="${answers.coverage}"]`); if (el) el.classList.add('selected');
-        const tile = document.querySelector(`#coverage-tiles .tile-option[data-value="${answers.coverage}"]`);
-        if (tile) {
-          tile.parentElement.querySelectorAll('.tile-option').forEach(n => { n.classList.remove('selected'); n.setAttribute('aria-pressed','false'); });
-          tile.classList.add('selected');
-          tile.setAttribute('aria-pressed','true');
-        }
-      }
-      if (answers.finish) {
-        const el = document.querySelector(`#q4 .option-box[data-value="${answers.finish}"]`); if (el) el.classList.add('selected');
-        const tile = document.querySelector(`#finish-tiles .tile-option[data-value="${answers.finish}"]`);
-        if (tile) {
-          tile.parentElement.querySelectorAll('.tile-option').forEach(n => { n.classList.remove('selected'); n.setAttribute('aria-pressed','false'); });
-          tile.classList.add('selected');
-          tile.setAttribute('aria-pressed','true');
-        }
-      }
+  // reset selections
+  document.querySelectorAll('#q2 .option-box, #q3 .option-box, #q4 .option-box').forEach(b => b.classList.remove('selected'));
+
+      // skin type faces
+      faces.forEach(f => f.classList.remove('selected'));
       if (answers.skin_type) {
-        const el = document.querySelector(`#q5 .option-box[data-value="${answers.skin_type}"]`); if (el) el.classList.add('selected');
+        const ft = document.querySelector(`.face[data-value="${answers.skin_type}"]`);
+        if (ft) ft.classList.add('selected');
       }
+
+      if (answers.has_acne) {
+        const el = document.querySelector(`#q2 .option-box[data-value="${answers.has_acne}"]`); if (el) el.classList.add('selected');
+      }
+      if (answers.acne_severity) {
+        const el = document.querySelector(`#q3 .option-box[data-value="${answers.acne_severity}"]`); if (el) el.classList.add('selected');
+      }
+      if (answers.complexity) {
+        const el = document.querySelector(`#q4 .option-box[data-value="${answers.complexity}"]`); if (el) el.classList.add('selected');
+      }
+
       // Reveal sections progressively so users can scroll back to edit
       syncSectionVisibility();
+      updateNextButtonState(document.getElementById('q1'));
       updateNextButtonState(document.getElementById('q2'));
-      updateNextButtonState(document.getElementById('q3'));
-      updateNextButtonState(document.getElementById('q4'));
-      updateNextButtonState(document.getElementById('q5'));
+  updateNextButtonState(document.getElementById('q3'));
+  updateNextButtonState(document.getElementById('q4'));
     }
 
     function syncSectionVisibility() {
       // Determine last answered index
-      const keys = ['intensity','undertone','coverage','finish','skin_type'];
+      const keys = ['skin_type','has_acne','acne_severity','complexity'];
       let lastAnswered = -1;
       keys.forEach((k, i) => { if (answers[k]) lastAnswered = i; });
       questions.forEach((qid, i) => {
@@ -910,7 +891,11 @@
       });
       if (lastAnswered >= 0 && lastAnswered < questions.length) {
         document.getElementById(questions[lastAnswered]).classList.add('completed');
-        const nextIndex = Math.min(lastAnswered + 1, questions.length - 1);
+        let nextIndex = Math.min(lastAnswered + 1, questions.length - 1);
+        // If user selected no acne, skip Q3 and move to Q4
+        if (answers.has_acne === 'no' && questions[nextIndex] === 'q3') {
+          nextIndex = questions.indexOf('q4');
+        }
         document.getElementById(questions[nextIndex]).classList.add('active');
       } else {
         document.getElementById('q1').classList.add('active');
@@ -922,47 +907,20 @@
     function restoreStateFromUrl() {
       const params = new URLSearchParams(location.search);
       let changed = false;
-      ['intensity','undertone','coverage','finish','skin_type'].forEach(k => {
+  ['skin_type','has_acne','acne_severity','complexity'].forEach(k => {
         const v = params.get(k);
         if (v) { answers[k] = v; changed = true; }
       });
       if (changed) applyAnswersToUI();
-      if (params.get('auto') === '1' && ['intensity','undertone','coverage','finish','skin_type'].every(k => !!answers[k])) {
-        showResults();
-      }
+  if (params.get('auto') === '1' && answers.skin_type && answers.has_acne && (answers.has_acne === 'no' || answers.acne_severity) && answers.complexity) { showResults(); }
     }
 
-    // Focus trap for modal (simple)
-    let focusTrapPrev = null;
-    function trapFocus(container) {
-      focusTrapPrev = document.activeElement;
-      const focusable = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      container.addEventListener('keydown', focusLoop);
-      function focusLoop(e) {
-        if (e.key !== 'Tab') return;
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
-      setTimeout(() => first && first.focus(), 0);
-      container._focusLoop = focusLoop;
-    }
-    function releaseFocusTrap() {
-      if (focusTrapPrev) focusTrapPrev.focus();
-      if (quickModal._focusLoop) quickModal.removeEventListener('keydown', quickModal._focusLoop);
-      focusTrapPrev = null;
-    }
-
-    // Auto-advance from intensity when user commits the change
-    slider.addEventListener('change', () => {
-      collapseThenNext('q1');
-    });
+    // Removed modal focus trap & slider auto-advance
 
     // Initial progress and state
   updateProgress();
     updateStepIndicator();
-    updateNextButtonState(document.getElementById('q1'));
+  updateNextButtonState(document.getElementById('q1'));
   if (!restoreStateFromStorage()) restoreStateFromUrl();
   renderSummary();
   </script>
