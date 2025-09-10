@@ -214,6 +214,8 @@
   .product-card .pc-cat { font-size: 12px; color: #666; }
   .product-card .pc-why { font-size: 12px; color: #333; }
   .product-card .pc-use { font-size: 12px; color: #2f6f2f; }
+  .product-card a { color: inherit; text-decoration: none; }
+  .product-card a:hover .pc-title { text-decoration: underline; }
     .btn-secondary { 
       background: #fff; 
       color: #000; 
@@ -505,11 +507,29 @@
           updateStepIndicator();
           // Smooth scroll into view of next section
           smoothScrollTo(nextEl);
+          // Hide all other question sections to prevent scrolling to them
+          hideNonActiveSections(nextId);
         }
       } else {
         showResults();
-        smoothScrollTo(resultsDiv);
+        // Avoid double scroll/jank: use a single animation frame before scrolling
+        requestAnimationFrame(() => smoothScrollTo(resultsDiv));
+        hideNonActiveSections('results');
       }
+    }
+
+    function hideNonActiveSections(activeId) {
+      questions.forEach(q => {
+        const el = document.getElementById(q);
+        if (!el) return;
+        if (activeId && q === activeId) {
+          el.style.display = 'block';
+          el.classList.add('active');
+        } else {
+          el.style.display = 'none';
+          el.classList.remove('active');
+        }
+      });
     }
 
     function smoothScrollTo(el) {
@@ -594,13 +614,13 @@
       if (recos) {
         const picks = buildProductPicks(answers);
         recos.innerHTML = picks.map(p => `
-          <div class="product-card">
+          <a class="product-card" ${p.url ? `href="${p.url}" target="_blank" rel="noopener"` : ''}>
             ${p.img ? `<img src="${p.img}" alt="${p.name}">` : ''}
             <div class="pc-cat">${p.category}</div>
             <div class="pc-title">${p.name}</div>
             <div class="pc-why">${p.why}</div>
             ${p.use ? `<div class="pc-use">${p.use}</div>` : ''}
-          </div>
+          </a>
         `).join('');
       }
 
@@ -753,19 +773,28 @@
         sunscreen: 'SPF 50+ PA++++ Ultra-Light Sun Shield'
       };
 
+      // Product URLs
+      const URLS = {
+        remover: 'https://sites.google.com/view/diepra-skincare-vn/products/makeup-remover?authuser=0',
+        cleanser: 'https://sites.google.com/view/diepra-skincare-vn/products/cleanser',
+        acne: 'https://sites.google.com/view/diepra-skincare-vn/products/acne-treatment?authuser=0',
+        moisturizer: 'https://sites.google.com/view/diepra-skincare-vn/products/Moi?authuser=0',
+        sunscreen: 'https://sites.google.com/view/diepra-skincare-vn/products/sun-protection?authuser=0'
+      };
+
       const picks = [];
 
       // Thorough: show remover
       if (cx === 'thorough') {
         picks.push({
-          category: 'Makeup Remover', name: P.remover, img: IMG.remover,
+          category: 'Makeup Remover', name: P.remover, img: IMG.remover, url: URLS.remover,
           why: 'Use at night when wearing makeup/sunscreen; gentle milk removes impurities while supporting the barrier.',
           use: 'PM as needed before cleanser.'
         });
       }
       // Cleanser
       picks.push({
-        category: 'Cleanser', name: P.cleanser, img: IMG.cleanser,
+        category: 'Cleanser', name: P.cleanser, img: IMG.cleanser, url: URLS.cleanser,
         why: 'Centella-based gentle cleanse to calm and hydrate. Suitable even for sensitive skin.',
         use: 'AM/PM after remover (if used).'
       });
@@ -773,7 +802,7 @@
       // Treatment
       if (hasAcne && cx !== 'simple') {
         picks.push({
-          category: 'Acne Treatment', name: P.acne, img: IMG.acne,
+          category: 'Acne Treatment', name: P.acne, img: IMG.acne, url: URLS.acne,
           why: sev === 'severe' ? 'Targeted support for blemish-prone skin; introduce slowly and consult a dermatologist for persistent acne.' : 'Target active blemishes; nightly or every other night.',
           use: sev === 'severe' ? 'Start low frequency at night; patch-test; consider medical advice.' : 'Apply thin layer or spot-treat after cleansing.'
         });
@@ -781,14 +810,14 @@
 
       // Moisturizer
       picks.push({
-        category: 'Moisturizer', name: P.moisturizer, img: IMG.moisturizer,
+        category: 'Moisturizer', name: P.moisturizer, img: IMG.moisturizer, url: URLS.moisturizer,
         why: st === 'dry' ? 'Rich hydration with 5 HA + hydrolyzed collagen to support a dry barrier.' : 'Lightweight hydration to support barrier without heaviness.',
         use: 'AM/PM after treatment/essence.'
       });
 
       // Sunscreen
       picks.push({
-        category: 'Sunscreen', name: P.sunscreen, img: IMG.sunscreen,
+        category: 'Sunscreen', name: P.sunscreen, img: IMG.sunscreen, url: URLS.sunscreen,
         why: 'Broad-spectrum daily protection with a comfortable, non-sticky finish.',
         use: 'AM as the last step. Apply generously to exposed areas.'
       });
@@ -803,7 +832,8 @@
         el.classList.remove('active','completed','collapsing','collapsed');
         el.style.height = '';
       });
-      document.getElementById('q1').classList.add('active');
+    document.getElementById('q1').classList.add('active');
+    hideNonActiveSections('q1');
       resultsDiv.style.display = 'none';
       progress.style.width = '0%';
   Object.keys(answers).forEach(key => delete answers[key]);
@@ -815,13 +845,18 @@
       localStorage.removeItem('beautyQuiz');
       history.replaceState({}, '', location.pathname);
   renderSummary();
+  // On initial load, ensure only the first section is visible if results are not shown
+  if (resultsDiv.style.display !== 'block') {
+    hideNonActiveSections('q1');
+  }
     });
     // Removed Quick Select modal logic
 
     // Share and edit actions
     document.getElementById('edit-answers').addEventListener('click', () => {
       resultsDiv.style.display = 'none';
-      document.getElementById('q1').classList.add('active');
+  document.getElementById('q1').classList.add('active');
+  hideNonActiveSections('q1');
       updateProgress();
       updateStepIndicator();
     });
