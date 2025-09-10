@@ -973,6 +973,10 @@
   updateNextButtonState(document.getElementById('q1'));
   if (!restoreStateFromStorage()) restoreStateFromUrl();
   renderSummary();
+    // Ensure only the first section is visible on first load (unless results are shown)
+    if (resultsDiv.style.display !== 'block') {
+      hideNonActiveSections('q1');
+    }
   </script>
 </body>
 </html>
