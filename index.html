@@ -373,8 +373,7 @@
         persistState();
         updateNextButtonState(document.getElementById('q1'));
         renderSummary();
-    // Auto-advance to next section
-    collapseThenNext('q1');
+  // Stay on this step; user advances via Next
       });
       face.addEventListener('keydown', (ev) => {
         if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); face.click(); }
@@ -396,8 +395,7 @@
         persistState();
         updateNextButtonState(targetBox.closest('.question-section'));
         renderSummary();
-    // Auto-advance for Q2/Q3 only; Q4 waits for explicit submit
-    if (qId !== 'q4') { collapseThenNext(qId); }
+    // Stay on this step; user advances via Next
       });
       box.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); box.click(); } });
     });
@@ -407,7 +405,7 @@
       btn.addEventListener('click', (e) => {
         if (btn.hasAttribute('disabled')) return;
   const currentId = e.target.closest('.question-section').id;
-  goToNextSection(currentId);
+  collapseThenNext(currentId);
       });
     });
 
@@ -537,7 +535,7 @@
       const container = document.getElementById('quiz-container');
       const attr = container ? container.getAttribute('data-scroll-offset') : null;
       const n = Number(attr);
-      return isFinite(n) ? n : 0; // customize via data-scroll-offset="64"
+  return isFinite(n) ? n : 0; // customize via data-scroll-offset="64"
     }
 
     function getScrollParent(node) {
@@ -557,6 +555,23 @@
       const pr = parent.getBoundingClientRect();
       return pr.top;
     }
+
+    // Lock scroll to the active question section to prevent navigating away by scroll
+    function lockScrollToActive() {
+      const active = document.querySelector('.question-section.active');
+      if (!active) return;
+      const offset = getScrollOffset();
+      const rect = active.getBoundingClientRect();
+      const targetTop = window.pageYOffset + rect.top - offset - 6;
+      const tolerance = 4;
+      // If user scrolls significantly away, snap back to the active section
+      const delta = Math.abs(window.pageYOffset - targetTop);
+      if (delta > tolerance) {
+        window.scrollTo({ top: targetTop, behavior: 'instant' in window ? 'instant' : 'auto' });
+      }
+    }
+
+    document.addEventListener('scroll', lockScrollToActive, { passive: true });
 
   function showResults() {
   // Required: skin_type, has_acne; if has_acne=yes, also acne_severity; and complexity
